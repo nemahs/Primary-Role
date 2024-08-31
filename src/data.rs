@@ -1,3 +1,4 @@
+use log::error;
 use serenity::all::{GuildId, RoleId};
 use sqlite;
 use sqlite::State;
@@ -29,6 +30,9 @@ impl AppData {
         new_db
     }
 
+    /// Register a new server with the database
+    ///
+    /// @param server_id ID of the new server
     pub fn new_server(&mut self, server_id: &GuildId) -> SQLResult {
         let statement = format!(
             "INSERT OR IGNORE INTO roles (guild_id, role_id) VALUES({}, NULL);",
@@ -37,6 +41,10 @@ impl AppData {
         self.db.execute(statement)
     }
 
+    /// Update the primary role for the given server
+    ///
+    /// @param server_id ID for the server to update
+    /// @param role_id ID to become the new primary role
     pub fn update_server_primary_role(
         &mut self,
         server_id: &GuildId,
@@ -51,12 +59,19 @@ impl AppData {
         self.db.execute(statement)
     }
 
+    /// Get if auto scanning is enabled for the given server
+    ///
+    /// @param server_id ID of the server to check
     pub fn is_auto_scan_enabled(&self, server_id: &GuildId) -> bool {
         let statement = format!(
             "SELECT auto_scan FROM roles WHERE guild_id = {};",
             server_id.get()
         );
-        let mut statement = self.db.prepare(statement).unwrap();
+        let statement = self.db.prepare(statement);
+        let Ok(mut statement) = statement else {
+            error!("Failed to prepare statement");
+            return false;
+        };
 
         while let Ok(State::Row) = statement.next() {
             return statement
@@ -67,6 +82,9 @@ impl AppData {
         return false;
     }
 
+    /// Disable auto scan on a given server
+    ///
+    /// @param server_id ID of the server to disable auto scanning on
     pub fn disable_auto_scan(&self, server_id: &GuildId) -> SQLResult {
         let statement = format!(
             "UPDATE OR IGNORE roles SET auto_scan = FALSE WHERE guild_id = {}",
@@ -76,6 +94,9 @@ impl AppData {
         self.db.execute(statement)
     }
 
+    /// Enable auto scan on a given server
+    ///
+    /// @param server_id ID of the server to enable auto scanning on
     pub fn enable_auto_scan(&self, server_id: &GuildId) -> SQLResult {
         let statement = format!(
             "UPDATE OR IGNORE roles SET auto_scan = TRUE WHERE guild_id = {}",
@@ -85,6 +106,11 @@ impl AppData {
         self.db.execute(statement)
     }
 
+    /// Get the primary role for a given server
+    ///
+    /// @param server_id ID for the server to get the primary role of
+    ///
+    /// @return Role ID of the primary role, or None if not saved
     pub fn get_primary_role(&self, server_id: &GuildId) -> Option<RoleId> {
         let statement = format!(
             "SELECT role_id FROM roles where guild_id = {};",

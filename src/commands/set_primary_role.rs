@@ -2,6 +2,12 @@ use serenity::all::*;
 
 use crate::data::AppData;
 
+/// Retrieve a given option from the list of provided options
+///
+/// @param name Option name to find
+/// @param vec List of provided command options
+///
+/// @return Option matching the given name, or None if not found
 fn get_option(name: &str, vec: &Vec<CommandDataOption>) -> Option<CommandDataOption> {
     for option in vec {
         if option.name == name {
@@ -12,6 +18,13 @@ fn get_option(name: &str, vec: &Vec<CommandDataOption>) -> Option<CommandDataOpt
     return None;
 }
 
+/// Set the primary role for a given server that users must have in order to hold other roles
+///
+/// @param ctx Context object for the command being processed
+/// @param options Options provided in the command
+/// @param data Database to update
+///
+/// @return Result message to display to the user
 pub async fn run(ctx: &Context, options: &CommandData, data: &mut AppData) -> String {
     let Some(new_id) = get_option("role_id", &options.options) else {
         return "No role ID given".to_string();
@@ -39,6 +52,7 @@ pub async fn run(ctx: &Context, options: &CommandData, data: &mut AppData) -> St
     return format!("Updated primary role to {}", new_id.get()).to_string();
 }
 
+/// Create the command to register with Discord
 pub fn register() -> CreateCommand {
     let id_option = CreateCommandOption::new(
         CommandOptionType::Integer,

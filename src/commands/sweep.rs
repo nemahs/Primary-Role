@@ -6,6 +6,13 @@ use serenity::{
 use crate::data::AppData;
 use tokio::sync::Mutex;
 
+/// Sweep through all members of a given server, purging roles from anyone without the configured primary role.
+///
+/// @param ctx Context object for the command being processed
+/// @param command Command being processed
+/// @param app_data Database of primary roles
+///
+/// @return Result message to display to the user
 pub async fn run(ctx: &Context, command: &CommandInteraction, app_data: &Mutex<AppData>) -> String {
     let Some(guild_id) = command.guild_id else {
         return "No server ID was given".to_string();
@@ -40,6 +47,7 @@ pub async fn run(ctx: &Context, command: &CommandInteraction, app_data: &Mutex<A
         .to_string();
 }
 
+/// Create the command to register with Discord
 pub fn register() -> CreateCommand {
     CreateCommand::new("sweep")
         .description(
