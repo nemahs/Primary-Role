@@ -85,9 +85,9 @@ impl EventHandler for Handler {
     ) {
         debug!("Got a guild member update");
         let app_data = self.app_data.lock().await;
-        let enabled = app_data.is_auto_scan_enabled(&event.guild_id);
-        if !enabled {
-            return; // Do nothing we aren't turned on.
+        let is_auto_scan_enabled = app_data.is_auto_scan_enabled(&event.guild_id);
+        if !is_auto_scan_enabled {
+            return; // Do nothing, auto scan is disabled.
         }
 
         let primary_role = app_data.get_primary_role(&event.guild_id);
@@ -119,7 +119,7 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+    dotenv().ok(); // Load environment variables from the .env file.
 
     let token = env::var("DISCORD_TOKEN")
         .expect("DISCORD_TOKEN should be in either the .env or in an environment variable");

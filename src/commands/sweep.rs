@@ -11,8 +11,8 @@ pub async fn run(ctx: &Context, command: &CommandInteraction, app_data: &Mutex<A
         return "No server ID was given".to_string();
     };
 
-    let mut total_members = 0;
-    let mut removed_roles = 0;
+    let mut total_members: u64 = 0;
+    let mut removed_roles: u64 = 0;
 
     let app_data = app_data.lock().await;
     let Some(primary_role) = app_data.get_primary_role(&guild_id) else {
