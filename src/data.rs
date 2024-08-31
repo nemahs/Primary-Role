@@ -6,10 +6,13 @@ pub struct AppData {
     db: sqlite::Connection,
 }
 
+type SQLResult = Result<(), sqlite::Error>;
+
 impl AppData {
     pub fn new() -> Self {
         let new_db = Self {
-            db: sqlite::Connection::open(":memory:").expect("Could not connect to database"),
+            db: sqlite::Connection::open(":memory:")
+                .expect("Expected in memory database to initialize"),
         };
 
         new_db
@@ -21,12 +24,12 @@ impl AppData {
           auto_scan BOOLEAN DEFAULT(TRUE)
         );",
             )
-            .unwrap();
+            .expect("Table was unable to be created.");
 
         new_db
     }
 
-    pub fn new_server(&mut self, server_id: &GuildId) -> Result<(), sqlite::Error> {
+    pub fn new_server(&mut self, server_id: &GuildId) -> SQLResult {
         let statement = format!(
             "INSERT OR IGNORE INTO roles (guild_id, role_id) VALUES({}, NULL);",
             server_id.get()
@@ -38,7 +41,7 @@ impl AppData {
         &mut self,
         server_id: &GuildId,
         role_id: &RoleId,
-    ) -> Result<(), sqlite::Error> {
+    ) -> SQLResult {
         let statement = format!(
             "UPDATE OR IGNORE roles SET role_id = {} WHERE guild_id = {};",
             role_id.get(),
@@ -64,7 +67,7 @@ impl AppData {
         return false;
     }
 
-    pub fn disable_auto_scan(&self, server_id: &GuildId) -> Result<(), sqlite::Error> {
+    pub fn disable_auto_scan(&self, server_id: &GuildId) -> SQLResult {
         let statement = format!(
             "UPDATE OR IGNORE roles SET auto_scan = FALSE WHERE guild_id = {}",
             server_id.get()
@@ -73,7 +76,7 @@ impl AppData {
         self.db.execute(statement)
     }
 
-    pub fn enable_auto_scan(&self, server_id: &GuildId) -> Result<(), sqlite::Error> {
+    pub fn enable_auto_scan(&self, server_id: &GuildId) -> SQLResult {
         let statement = format!(
             "UPDATE OR IGNORE roles SET auto_scan = TRUE WHERE guild_id = {}",
             server_id.get()
@@ -87,12 +90,13 @@ impl AppData {
             "SELECT role_id FROM roles where guild_id = {};",
             server_id.get()
         );
-        let mut statement = self.db.prepare(statement).unwrap();
+        let mut statement = self.db.prepare(statement).ok()?;
 
         while let Ok(State::Row) = statement.next() {
-            return statement
-                .read::<i64, _>("role_id")
-                .map_or(None, |id| Some(RoleId::new(id.try_into().unwrap())));
+            let id = statement.read::<i64, _>("role_id").ok()?;
+            let id: u64 = id.try_into().ok()?;
+
+            return Some(RoleId::new(id));
         }
 
         return None;
