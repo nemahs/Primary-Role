@@ -7,46 +7,37 @@ use crate::data::AppData;
 use tokio::sync::Mutex;
 
 pub async fn run(ctx: &Context, command: &CommandInteraction, app_data: &Mutex<AppData>) -> String {
-    if let Some(guild_id) = command.guild_id {
-        let mut total_members = 0;
-        let mut removed_roles = 0;
+    let Some(guild_id) = command.guild_id else {
+        return "No server ID was given".to_string();
+    };
 
-        let app_data = app_data.lock().await;
-        if let Some(primary_role) = app_data.get_primary_role(&guild_id) {
-            let member_list = guild_id.members(&ctx.http, None, None).await;
+    let mut total_members = 0;
+    let mut removed_roles = 0;
 
-            match member_list {
-                Ok(member_list) => {
-                    for member in member_list {
-                        total_members += 1;
-                        if !member.roles.contains(&primary_role)
-                            && !member.user.bot
-                            && !member.roles.is_empty()
-                        {
-                            let result = member.remove_roles(&ctx.http, &member.roles).await;
-                            removed_roles += 1;
+    let app_data = app_data.lock().await;
+    let Some(primary_role) = app_data.get_primary_role(&guild_id) else {
+        return "Failed to determine the primary role for this server".to_string();
+    };
 
-                            if result.is_err() {
-                                return format!(
-                                    "Failed to remove roles from {}",
-                                    member.display_name()
-                                )
-                                .to_string();
-                            }
-                        }
-                    }
+    let Ok(member_list) = guild_id.members(&ctx.http, None, None).await else {
+        return "Failed to get the member list for the server".to_string();
+    };
 
-                    return format!(
-                        "Removed roles on {removed_roles} members of {total_members} in server."
-                    )
+    for member in member_list {
+        total_members += 1;
+        if !member.roles.contains(&primary_role) && !member.user.bot && !member.roles.is_empty() {
+            let result = member.remove_roles(&ctx.http, &member.roles).await;
+            removed_roles += 1;
+
+            if result.is_err() {
+                return format!("Failed to remove roles from {}", member.display_name())
                     .to_string();
-                }
-                Err(_) => return "Failed to get memberlist for server".to_string(),
             }
         }
     }
 
-    return "An error occurred while processing roles".to_string();
+    return format!("Removed roles on {removed_roles} members of {total_members} in server.")
+        .to_string();
 }
 
 pub fn register() -> CreateCommand {

@@ -13,21 +13,28 @@ fn get_option(name: &str, vec: &Vec<CommandDataOption>) -> Option<CommandDataOpt
 }
 
 pub async fn run(ctx: &Context, options: &CommandData, data: &mut AppData) -> String {
-    let new_id = get_option("role_id", &options.options).unwrap();
-    let new_id = new_id.value.as_role_id().unwrap();
-    let guild_id = options.guild_id.unwrap();
+    let Some(new_id) = get_option("role_id", &options.options) else {
+        return "No role ID given".to_string();
+    };
+    let Some(new_id) = new_id.value.as_role_id() else {
+        return "Given role ID is invalid".to_string();
+    };
+    let Some(guild_id) = options.guild_id else {
+        return "No server ID found".to_string();
+    };
 
     // Validate role exists
-    if !guild_id
-        .roles(&ctx.http)
-        .await
-        .unwrap()
-        .contains_key(&new_id)
-    {
+    let Ok(roles) = guild_id.roles(&ctx.http).await else {
+        return "Failed to get list of roles from the server".to_string();
+    };
+
+    if !roles.contains_key(&new_id) {
         return "Given role is not in this server".to_string();
     }
     // Update database
-    data.update_server_primary_role(&guild_id, &new_id).unwrap();
+    if data.update_server_primary_role(&guild_id, &new_id).is_err() {
+        return "Failed to update primary role in the database".to_string();
+    }
 
     return format!("Updated primary role to {}", new_id.get()).to_string();
 }

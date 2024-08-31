@@ -4,9 +4,15 @@ use serenity::builder::CreateCommand;
 use crate::data::AppData;
 
 pub fn run(data: &AppData, interaction: &CommandInteraction) -> String {
-    data.disable_auto_scan(&interaction.guild_id.unwrap())
-        .unwrap();
-    "Automatic Role Scanning is no longer active".to_string()
+    let Some(guild_id) = interaction.guild_id else {
+        return "No server ID given, unable to disable auto scanning".to_string();
+    };
+
+    if data.disable_auto_scan(&guild_id).is_err() {
+        return "A database error occurred, unable to disable auto scanning".to_string();
+    }
+
+    return "Automatic Role Scanning is no longer active".to_string();
 }
 
 pub fn register() -> CreateCommand {
