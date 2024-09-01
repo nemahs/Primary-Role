@@ -132,6 +132,13 @@ impl AppData {
 #[cfg(test)]
 mod test {
     use super::*;
+    use proptest::prelude::*;
+    use proptest::test_runner::Config;
+    use proptest_state_machine::{
+        self, prop_state_machine, ReferenceStateMachine, StateMachineTest,
+    };
+
+    // Normal tests
 
     #[test]
     fn test_auto_scan() {
@@ -146,5 +153,102 @@ mod test {
         assert_eq!(true, test_subject.is_auto_scan_enabled(&guild1));
         assert_eq!(false, test_subject.is_auto_scan_enabled(&guild2));
         assert_eq!(false, test_subject.is_auto_scan_enabled(&GuildId::new(37)));
+    }
+
+    // State machine test
+    impl std::fmt::Debug for AppData {
+        fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            Ok(())
+        }
+    }
+
+    impl Clone for AppData {
+        fn clone(&self) -> Self {
+            return Self::new();
+        }
+    }
+
+    prop_state_machine! {
+      #![proptest_config(Config {
+        .. Config::default()
+      })]
+
+      #[test]
+      fn run_state_machine(
+        sequential
+        1..30
+        =>
+        AppData
+      );
+    }
+
+    pub struct StateMachine;
+
+    #[derive(Clone, Debug)]
+    pub enum Transition {
+        NewServer(u64),
+        UpdateRole((u64, u64)),
+        EnableScan(u64),
+        DisableScan(u64),
+    }
+
+    impl ReferenceStateMachine for StateMachine {
+        type State = Vec<i32>;
+        type Transition = Transition;
+
+        fn init_state() -> proptest::prelude::BoxedStrategy<Self::State> {
+            Just(vec![]).boxed()
+        }
+
+        fn transitions(_state: &Self::State) -> BoxedStrategy<Self::Transition> {
+            prop_oneof![
+              1 => (any::<u64>()).prop_map(Transition::NewServer),
+              2 => (any::<u64>(), any::<u64>()).prop_map(Transition::UpdateRole),
+              3 => (any::<u64>()).prop_map(Transition::EnableScan),
+              4 => (any::<u64>()).prop_map(Transition::DisableScan)
+            ]
+            .boxed()
+        }
+
+        fn apply(state: Self::State, _transition: &Self::Transition) -> Self::State {
+            state
+        }
+    }
+
+    impl StateMachineTest for AppData {
+        type Reference = StateMachine;
+        type SystemUnderTest = Self;
+
+        fn init_test(
+            _ref_state: &<Self::Reference as ReferenceStateMachine>::State,
+        ) -> Self::SystemUnderTest {
+            AppData::new()
+        }
+
+        fn apply(
+            mut state: Self::SystemUnderTest,
+            _ref_state: &<Self::Reference as ReferenceStateMachine>::State,
+            transition: <Self::Reference as ReferenceStateMachine>::Transition,
+        ) -> Self::SystemUnderTest {
+            match transition {
+                Transition::NewServer(value) => {
+                    let _ = state.new_server(&GuildId::new(value));
+                }
+                Transition::UpdateRole(values) => {
+                    let _ = state.update_server_primary_role(
+                        &GuildId::new(values.0),
+                        &RoleId::new(values.1),
+                    );
+                }
+                Transition::EnableScan(value) => {
+                    let _ = state.enable_auto_scan(&GuildId::new(value));
+                }
+                Transition::DisableScan(value) => {
+                    let _ = state.disable_auto_scan(&GuildId::new(value));
+                }
+            }
+
+            state
+        }
     }
 }
