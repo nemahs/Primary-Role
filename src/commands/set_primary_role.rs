@@ -55,7 +55,7 @@ pub async fn run(ctx: &Context, options: &CommandData, data: &mut AppData) -> St
 /// Create the command to register with Discord
 pub fn register() -> CreateCommand {
     let id_option = CreateCommandOption::new(
-        CommandOptionType::Integer,
+        CommandOptionType::Role,
         "role_id",
         "Role to become the new primary role",
     )
