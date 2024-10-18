@@ -1,8 +1,7 @@
 use data::AppData;
-use dotenv::dotenv;
 use log::*;
 use serenity::{all::*, async_trait, Client};
-use std::env;
+use std::fs;
 use tokio::sync::Mutex;
 
 mod commands;
@@ -119,10 +118,8 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok(); // Load environment variables from the .env file.
-
-    let token = env::var("DISCORD_TOKEN")
-        .expect("DISCORD_TOKEN should be in either the .env or in an environment variable");
+    let token = fs::read_to_string("/run/secrets/DISCORD_TOKEN")
+        .expect("Expected token to be defined as a secret.");
 
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS;
 

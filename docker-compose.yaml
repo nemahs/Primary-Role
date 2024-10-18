@@ -1,0 +1,18 @@
+services:
+  role-bot:
+    build: .
+    image: nemahs.org/primary-role
+
+    secrets:
+      - DISCORD_TOKEN
+
+    volumes:
+      - /etc/config.sqlite
+
+    deploy:
+      replicas: 1
+
+secrets:
+  DISCORD_TOKEN:
+    external:
+      true

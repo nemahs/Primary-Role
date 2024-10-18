@@ -12,8 +12,8 @@ type SQLResult = Result<(), sqlite::Error>;
 impl AppData {
     pub fn new() -> Self {
         let new_db = Self {
-            db: sqlite::Connection::open(":memory:")
-                .expect("Expected in memory database to initialize"),
+            db: sqlite::Connection::open("/etc/config.sqlite")
+                .expect("Expected the database to initialize"),
         };
 
         new_db
