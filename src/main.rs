@@ -125,7 +125,7 @@ async fn main() {
 
     let mut client = Client::builder(&token, intents)
         .event_handler(Handler {
-            app_data: Mutex::new(AppData::new()),
+            app_data: Mutex::new(AppData::new("/etc/config.sqlite")),
         })
         .await
         .expect("Error creating client");

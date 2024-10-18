@@ -10,10 +10,9 @@ pub struct AppData {
 type SQLResult = Result<(), sqlite::Error>;
 
 impl AppData {
-    pub fn new() -> Self {
+    pub fn new(db_location: &str) -> Self {
         let new_db = Self {
-            db: sqlite::Connection::open("/etc/config.sqlite")
-                .expect("Expected the database to initialize"),
+            db: sqlite::Connection::open(db_location).expect("Expected the database to initialize"),
         };
 
         new_db
@@ -142,7 +141,7 @@ mod test {
 
     #[test]
     fn test_auto_scan() {
-        let mut test_subject = AppData::new();
+        let mut test_subject = AppData::new(":memory:");
         let guild1 = GuildId::new(1);
         let guild2 = GuildId::new(2);
 
@@ -159,12 +158,6 @@ mod test {
     impl std::fmt::Debug for AppData {
         fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             Ok(())
-        }
-    }
-
-    impl Clone for AppData {
-        fn clone(&self) -> Self {
-            return Self::new();
         }
     }
 
@@ -222,7 +215,7 @@ mod test {
         fn init_test(
             _ref_state: &<Self::Reference as ReferenceStateMachine>::State,
         ) -> Self::SystemUnderTest {
-            AppData::new()
+            AppData::new(":memory:")
         }
 
         fn apply(
