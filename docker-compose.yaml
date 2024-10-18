@@ -6,9 +6,6 @@ services:
     secrets:
       - DISCORD_TOKEN
 
-    volumes:
-      - /etc/config.sqlite
-
     deploy:
       replicas: 1
 

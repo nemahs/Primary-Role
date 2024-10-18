@@ -116,16 +116,18 @@ impl EventHandler for Handler {
     }
 }
 
+const TOKEN_FILE: &str = "/run/secrets/DISCORD_TOKEN";
+const DATABASE_FILE: &str = "/app/data/config.sqlite";
+
 #[tokio::main]
 async fn main() {
-    let token = fs::read_to_string("/run/secrets/DISCORD_TOKEN")
-        .expect("Expected token to be defined as a secret.");
+    let token = fs::read_to_string(TOKEN_FILE).expect("Expected token file to exist");
 
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS;
 
     let mut client = Client::builder(&token, intents)
         .event_handler(Handler {
-            app_data: Mutex::new(AppData::new("/etc/config.sqlite")),
+            app_data: Mutex::new(AppData::new(DATABASE_FILE)),
         })
         .await
         .expect("Error creating client");
