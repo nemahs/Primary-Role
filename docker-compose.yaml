@@ -1,7 +1,7 @@
 services:
   role-bot:
     build: .
-    image: nemahs.org/primary-role
+    image: registry.nemahs.org/primary-role
 
     secrets:
       - DISCORD_TOKEN
