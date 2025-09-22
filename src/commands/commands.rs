@@ -9,7 +9,6 @@ pub trait DiscordCommand: Send + Sync {
     async fn run(&self, ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String;
 }
 
-
 /// Retrieve a given option from the list of provided options
 ///
 /// @param name Option name to find

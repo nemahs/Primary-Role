@@ -1,0 +1,7 @@
+
+max_width = 180
+blank_lines_lower_bound = 1
+blank_lines_upper_bound = 1
+
+group_imports = "StdExternalCrate"
+imports_granularity = "Crate"

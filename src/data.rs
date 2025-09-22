@@ -33,10 +33,7 @@ impl AppData {
     ///
     /// @param server_id ID of the new server
     pub fn new_server(&mut self, server_id: &GuildId) -> SQLResult {
-        let statement = format!(
-            "INSERT OR IGNORE INTO roles (guild_id, role_id) VALUES({}, NULL);",
-            server_id.get()
-        );
+        let statement = format!("INSERT OR IGNORE INTO roles (guild_id, role_id) VALUES({}, NULL);", server_id.get());
         self.db.execute(statement)
     }
 
@@ -44,16 +41,8 @@ impl AppData {
     ///
     /// @param server_id ID for the server to update
     /// @param role_id ID to become the new primary role
-    pub fn update_server_primary_role(
-        &mut self,
-        server_id: &GuildId,
-        role_id: &RoleId,
-    ) -> SQLResult {
-        let statement = format!(
-            "UPDATE OR IGNORE roles SET role_id = {} WHERE guild_id = {};",
-            role_id.get(),
-            server_id.get()
-        );
+    pub fn update_server_primary_role(&mut self, server_id: &GuildId, role_id: &RoleId) -> SQLResult {
+        let statement = format!("UPDATE OR IGNORE roles SET role_id = {} WHERE guild_id = {};", role_id.get(), server_id.get());
 
         self.db.execute(statement)
     }
@@ -62,10 +51,7 @@ impl AppData {
     ///
     /// @param server_id ID of the server to check
     pub fn is_auto_scan_enabled(&self, server_id: &GuildId) -> bool {
-        let statement = format!(
-            "SELECT auto_scan FROM roles WHERE guild_id = {};",
-            server_id.get()
-        );
+        let statement = format!("SELECT auto_scan FROM roles WHERE guild_id = {};", server_id.get());
         let statement = self.db.prepare(statement);
         let Ok(mut statement) = statement else {
             error!("Failed to prepare statement");
@@ -73,9 +59,7 @@ impl AppData {
         };
 
         while let Ok(State::Row) = statement.next() {
-            return statement
-                .read::<i64, _>("auto_scan")
-                .map_or(false, |val| val != 0);
+            return statement.read::<i64, _>("auto_scan").map_or(false, |val| val != 0);
         }
 
         return false;
@@ -85,10 +69,7 @@ impl AppData {
     ///
     /// @param server_id ID of the server to disable auto scanning on
     pub fn disable_auto_scan(&self, server_id: &GuildId) -> SQLResult {
-        let statement = format!(
-            "UPDATE OR IGNORE roles SET auto_scan = FALSE WHERE guild_id = {}",
-            server_id.get()
-        );
+        let statement = format!("UPDATE OR IGNORE roles SET auto_scan = FALSE WHERE guild_id = {}", server_id.get());
 
         self.db.execute(statement)
     }
@@ -97,10 +78,7 @@ impl AppData {
     ///
     /// @param server_id ID of the server to enable auto scanning on
     pub fn enable_auto_scan(&self, server_id: &GuildId) -> SQLResult {
-        let statement = format!(
-            "UPDATE OR IGNORE roles SET auto_scan = TRUE WHERE guild_id = {}",
-            server_id.get()
-        );
+        let statement = format!("UPDATE OR IGNORE roles SET auto_scan = TRUE WHERE guild_id = {}", server_id.get());
 
         self.db.execute(statement)
     }
@@ -111,10 +89,7 @@ impl AppData {
     ///
     /// @return Role ID of the primary role, or None if not saved
     pub fn get_primary_role(&self, server_id: &GuildId) -> Option<RoleId> {
-        let statement = format!(
-            "SELECT role_id FROM roles where guild_id = {};",
-            server_id.get()
-        );
+        let statement = format!("SELECT role_id FROM roles where guild_id = {};", server_id.get());
         let mut statement = self.db.prepare(statement).ok()?;
 
         while let Ok(State::Row) = statement.next() {
@@ -137,9 +112,7 @@ mod test {
     use super::*;
     use proptest::prelude::*;
     use proptest::test_runner::Config;
-    use proptest_state_machine::{
-        self, prop_state_machine, ReferenceStateMachine, StateMachineTest,
-    };
+    use proptest_state_machine::{self, prop_state_machine, ReferenceStateMachine, StateMachineTest};
 
     // Normal tests
 
@@ -216,9 +189,7 @@ mod test {
         type Reference = StateMachine;
         type SystemUnderTest = Self;
 
-        fn init_test(
-            _ref_state: &<Self::Reference as ReferenceStateMachine>::State,
-        ) -> Self::SystemUnderTest {
+        fn init_test(_ref_state: &<Self::Reference as ReferenceStateMachine>::State) -> Self::SystemUnderTest {
             AppData::new(":memory:")
         }
 
@@ -232,10 +203,7 @@ mod test {
                     let _ = state.new_server(&GuildId::new(value));
                 }
                 Transition::UpdateRole(values) => {
-                    let _ = state.update_server_primary_role(
-                        &GuildId::new(values.0),
-                        &RoleId::new(values.1),
-                    );
+                    let _ = state.update_server_primary_role(&GuildId::new(values.0), &RoleId::new(values.1));
                 }
                 Transition::EnableScan(value) => {
                     let _ = state.enable_auto_scan(&GuildId::new(value));

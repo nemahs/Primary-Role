@@ -12,12 +12,7 @@ impl DiscordCommand for EnableCommand {
     /// @param command Discord command to process
     ///
     /// @return Result message to display to the user
-    async fn run(
-        &self,
-        _ctx: &Context,
-        command: &CommandInteraction,
-        app_data: &mut AppData,
-    ) -> String {
+    async fn run(&self, _ctx: &Context, command: &CommandInteraction, app_data: &mut AppData) -> String {
         let Some(guild_id) = command.guild_id else {
             return "No server ID found, unable to enable auto scanning".to_string();
         };
@@ -47,12 +42,7 @@ impl DiscordCommand for DisableCommand {
     /// @param command Discord command to process
     ///
     /// @return Result message to display to the user
-    async fn run(
-        &self,
-        _ctx: &Context,
-        command: &CommandInteraction,
-        data: &mut AppData,
-    ) -> String {
+    async fn run(&self, _ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
         let Some(guild_id) = command.guild_id else {
             return "No server ID given, unable to disable auto scanning".to_string();
         };
@@ -83,22 +73,13 @@ impl DiscordCommand for StatusCommand {
     /// @param ctx Context object for the command being processed
     ///
     /// @return Result message to display to the user
-    async fn run(
-        &self,
-        _ctx: &Context,
-        command: &CommandInteraction,
-        data: &mut AppData,
-    ) -> String {
+    async fn run(&self, _ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
         let Some(guild_id) = command.guild_id else {
             return "No server ID found, unable to check status".to_string();
         };
 
         let is_enabled = data.is_auto_scan_enabled(&guild_id);
-        return format!(
-            "Automatic role scanning is currently {}",
-            if is_enabled { "enabled" } else { "disabled" }
-        )
-        .to_string();
+        return format!("Automatic role scanning is currently {}", if is_enabled { "enabled" } else { "disabled" }).to_string();
     }
 
     fn register(&self) -> CreateCommand {

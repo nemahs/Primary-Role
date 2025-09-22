@@ -1,8 +1,9 @@
 use serenity::all::*;
 
-use crate::{commands::commands::{get_option, DiscordCommand}, data::AppData};
-
-
+use crate::{
+    commands::commands::{get_option, DiscordCommand},
+    data::AppData,
+};
 
 pub struct SetPrimaryRoleCommand;
 
@@ -17,7 +18,6 @@ impl DiscordCommand for SetPrimaryRoleCommand {
     /// @return Result message to display to the user
     async fn run(&self, ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
         let options = &command.data;
-
 
         let Some(new_id) = get_option("role_id", &options.options) else {
             return "No role ID given".to_string();
@@ -47,17 +47,12 @@ impl DiscordCommand for SetPrimaryRoleCommand {
 
     /// Create the command to register with Discord
     fn register(&self) -> CreateCommand {
-        let id_option = CreateCommandOption::new(
-            CommandOptionType::Role,
-            "role_id",
-            "Role to become the new primary role",
-        )
-        .required(true);
+        let id_option = CreateCommandOption::new(CommandOptionType::Role, "role_id", "Role to become the new primary role").required(true);
 
         CreateCommand::new("setprimaryrole")
-        .description("Set the primary role for this server that all members must have in order to be given another role.")
-        .default_member_permissions(Permissions::ADMINISTRATOR)
-        .add_option(id_option)
+            .description("Set the primary role for this server that all members must have in order to be given another role.")
+            .default_member_permissions(Permissions::ADMINISTRATOR)
+            .add_option(id_option)
     }
 }
 
@@ -65,7 +60,6 @@ pub struct GetPrimaryRoleCommand;
 
 #[async_trait]
 impl DiscordCommand for GetPrimaryRoleCommand {
-
     async fn run(&self, _: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
         let options = &command.data;
         let Some(guild_id) = options.guild_id else {
@@ -83,7 +77,7 @@ impl DiscordCommand for GetPrimaryRoleCommand {
     /// Create the command to register with Discord
     fn register(&self) -> CreateCommand {
         CreateCommand::new("getprimaryrole")
-        .description("Get the primary role for this server that all members must have in order to be given another role.")
-        .default_member_permissions(Permissions::ADMINISTRATOR)
+            .description("Get the primary role for this server that all members must have in order to be given another role.")
+            .default_member_permissions(Permissions::ADMINISTRATOR)
     }
 }
