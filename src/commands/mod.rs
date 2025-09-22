@@ -1,4 +1,4 @@
-pub mod disable;
-pub mod enable;
-pub mod set_primary_role;
+pub mod bot_management;
+pub mod primary_role;
 pub mod sweep;
+pub mod commands;

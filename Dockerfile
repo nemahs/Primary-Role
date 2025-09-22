@@ -1,4 +1,4 @@
-FROM rust AS builder
+FROM rust:latest AS builder
 WORKDIR /app
 
 RUN \
@@ -9,10 +9,11 @@ RUN \
 
 # Production container
 FROM debian:stable-slim
-RUN apt update && apt install libsqlite3-0 && rm -rf /var/lib/apt/lists/*
-RUN addgroup --system bot && useradd --system --gid bot bot
+RUN apt-get update && apt-get install --no-install-recommends -y libsqlite3-0 && rm -rf /var/lib/apt/lists/*
+RUN useradd --system bot 
 RUN mkdir -p /app/data && chown bot /app/data
 USER bot
 VOLUME ["/app/data/"]
+WORKDIR /app
 COPY --from=builder --chmod=555 /target/release/discord_bot discord_bot
 CMD [ "./discord_bot" ]

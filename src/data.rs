@@ -121,6 +121,10 @@ impl AppData {
             let id = statement.read::<i64, _>("role_id").ok()?;
             let id: u64 = id.try_into().ok()?;
 
+            if id == 0 {
+                return None;
+            }
+
             return Some(RoleId::new(id));
         }
 

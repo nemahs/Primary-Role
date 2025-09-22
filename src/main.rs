@@ -1,8 +1,11 @@
 use data::AppData;
 use log::*;
+use phf::phf_map;
 use serenity::{all::*, async_trait, Client};
 use std::fs;
 use tokio::sync::Mutex;
+
+use crate::commands::commands::DiscordCommand;
 
 mod commands;
 mod data;
@@ -10,6 +13,15 @@ mod data;
 struct Handler {
     app_data: Mutex<AppData>,
 }
+
+const COMMANDS: phf::Map<&'static str, &dyn DiscordCommand> = phf_map! {
+    "enable" => &commands::bot_management::EnableCommand,
+    "disable" => &commands::bot_management::DisableCommand,
+    "status" => &commands::bot_management::StatusCommand,
+    "sweep" => &commands::sweep::SweepCommand,
+    "setprimaryrole" => &commands::primary_role::SetPrimaryRoleCommand,
+    "getprimaryrole" => &commands::primary_role::GetPrimaryRoleCommand,
+};
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -20,14 +32,13 @@ impl EventHandler for Handler {
 
         let mut app_data = self.app_data.lock().await;
 
-        let content = match command.data.name.as_str() {
-            "enable" => Some(commands::enable::run(&app_data, &command)),
-            "disable" => Some(commands::disable::run(&app_data, &command)),
-            "sweep" => Some(commands::sweep::run(&ctx, &command, &self.app_data).await),
-            "primaryrole" => {
-                Some(commands::set_primary_role::run(&ctx, &command.data, &mut app_data).await)
+        let command_func = COMMANDS.get(&command.data.name);
+        let content = match command_func {
+            Some(cmd) => Some(cmd.run(&ctx, &command, &mut app_data).await),
+            None => {
+                error!("No command found matching {}", command.data.name);
+                None
             }
-            _ => None, // Not a valid command, leave it for another bot to deal with.
         };
 
         if let Some(content) = content {
@@ -36,7 +47,7 @@ impl EventHandler for Handler {
                 .ephemeral(true);
             let builder = CreateInteractionResponse::Message(data);
 
-            if command.create_response(&ctx.http, builder).await.is_err() {
+            if command.create_response(&ctx, builder).await.is_err() {
                 error!("Failed to send response for command {}", command.data.name);
             }
         }
@@ -47,19 +58,12 @@ impl EventHandler for Handler {
 
         for guild in ready.guilds {
             let guild = guild.id;
+            let register_functions = COMMANDS
+                .entries()
+                .map(|(_, cmd)| cmd.register())
+                .collect::<Vec<_>>();
 
-            let registered_commands = guild
-                .set_commands(
-                    &ctx.http,
-                    vec![
-                        commands::enable::register(),
-                        commands::disable::register(),
-                        commands::sweep::register(),
-                        commands::set_primary_role::register(),
-                    ],
-                )
-                .await
-                .ok();
+            let registered_commands = guild.set_commands(&ctx, register_functions).await.ok();
 
             match registered_commands {
                 Some(commands) => info!(
@@ -108,7 +112,7 @@ impl EventHandler for Handler {
                 return;
             };
 
-            match member.remove_roles(ctx.http, &event.roles).await {
+            match member.remove_roles(&ctx, &event.roles).await {
                 Ok(_) => info!("Removed roles from {member:?}"),
                 Err(_) => error!("Failed to remove roles from {member:?}"),
             };
@@ -121,6 +125,7 @@ const DATABASE_FILE: &str = "/app/data/config.sqlite";
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
     let token = fs::read_to_string(TOKEN_FILE).expect("Expected token file to exist");
 
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS;

@@ -3,8 +3,14 @@ services:
     build: .
     image: registry.nemahs.org/primary-role
 
+    environment:
+      RUST_LOG: "debug,serenity=warn"
+
     secrets:
       - DISCORD_TOKEN
+
+    volumes:
+      - bot_data:/app/data
 
     deploy:
       replicas: 1
@@ -13,3 +19,7 @@ secrets:
   DISCORD_TOKEN:
     external:
       true
+
+
+volumes:
+  bot_data:
