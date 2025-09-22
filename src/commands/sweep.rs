@@ -123,5 +123,6 @@ impl DiscordCommand for SweepCommand {
         CreateCommand::new("sweep")
             .description("Sweep the current server and remove roles from members without the mandatory role.")
             .default_member_permissions(Permissions::ADMINISTRATOR)
+            .add_context(InteractionContext::Guild)
     }
 }

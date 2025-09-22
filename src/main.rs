@@ -16,12 +16,9 @@ struct Handler {
 }
 
 const COMMANDS: phf::Map<&'static str, &dyn DiscordCommand> = phf_map! {
-    "enable" => &commands::bot_management::EnableCommand,
-    "disable" => &commands::bot_management::DisableCommand,
-    "status" => &commands::bot_management::StatusCommand,
     "sweep" => &commands::sweep::SweepCommand,
-    "setprimaryrole" => &commands::primary_role::SetPrimaryRoleCommand,
-    "getprimaryrole" => &commands::primary_role::GetPrimaryRoleCommand,
+    "primaryrole" => &commands::primary_role::PrimaryRoleCommands,
+    "scanning" => &commands::bot_management::ScanningCommands,
 };
 
 #[async_trait]

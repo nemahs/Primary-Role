@@ -2,17 +2,11 @@ use serenity::all::*;
 
 use crate::{commands::commands::DiscordCommand, data::AppData};
 
-pub struct EnableCommand;
+pub struct ScanningCommands;
 
-#[async_trait]
-impl DiscordCommand for EnableCommand {
-    /// Enable automatic role scanning for the given server.
-    ///
-    /// @param app_data Database to update
-    /// @param command Discord command to process
-    ///
-    /// @return Result message to display to the user
-    async fn run(&self, _ctx: &Context, command: &CommandInteraction, app_data: &mut AppData) -> String {
+impl ScanningCommands{
+
+    async fn enable(command: &CommandInteraction, app_data: &mut AppData) -> String {
         let Some(guild_id) = command.guild_id else {
             return "No server ID found, unable to enable auto scanning".to_string();
         };
@@ -24,25 +18,7 @@ impl DiscordCommand for EnableCommand {
         return "Automatic role scanning is now active".to_string();
     }
 
-    /// Create the command to register with Discord.
-    fn register(&self) -> CreateCommand {
-        CreateCommand::new("enable")
-            .description("Enables the automatic role scanner")
-            .default_member_permissions(Permissions::ADMINISTRATOR)
-    }
-}
-
-pub struct DisableCommand;
-
-#[async_trait]
-impl DiscordCommand for DisableCommand {
-    /// Disable the automatic role scanning for the given server
-    ///
-    /// @param data Database to update
-    /// @param command Discord command to process
-    ///
-    /// @return Result message to display to the user
-    async fn run(&self, _ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
+    async fn disable(command: &CommandInteraction, data: &mut AppData) -> String {
         let Some(guild_id) = command.guild_id else {
             return "No server ID given, unable to disable auto scanning".to_string();
         };
@@ -54,26 +30,7 @@ impl DiscordCommand for DisableCommand {
         return "Automatic Role Scanning is no longer active".to_string();
     }
 
-    /// Create the command to register to Discord
-    fn register(&self) -> CreateCommand {
-        CreateCommand::new("disable")
-            .description("Disables the automatic role scanner")
-            .default_member_permissions(Permissions::ADMINISTRATOR)
-    }
-}
-
-pub struct StatusCommand;
-
-#[async_trait]
-impl DiscordCommand for StatusCommand {
-    /// Check if automatic role scanning is enabled for this server
-    ///
-    /// @param command Discord command to process
-    /// @param data Database to query
-    /// @param ctx Context object for the command being processed
-    ///
-    /// @return Result message to display to the user
-    async fn run(&self, _ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
+    async fn status(command: &CommandInteraction, data: &mut AppData) -> String {
         let Some(guild_id) = command.guild_id else {
             return "No server ID found, unable to check status".to_string();
         };
@@ -81,10 +38,38 @@ impl DiscordCommand for StatusCommand {
         let is_enabled = data.is_auto_scan_enabled(&guild_id);
         return format!("Automatic role scanning is currently {}", if is_enabled { "enabled" } else { "disabled" }).to_string();
     }
+}
+
+#[async_trait]
+impl DiscordCommand for ScanningCommands {
+    
+    async fn run(&self, _ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
+
+        let Some(subcommand) = command.data.options.get(0) else {
+            return "No subcommand given".to_string();
+        };
+
+        match subcommand.name.as_str() {
+            "enable" => ScanningCommands::enable(command, data).await,
+            "disable" => ScanningCommands::disable(command, data).await,
+            "status" => ScanningCommands::status(command, data).await,
+            _ => "Unknown subcommand".to_string(),
+        }
+    }
 
     fn register(&self) -> CreateCommand {
-        CreateCommand::new("status")
-            .description("Check if the automatic role scanner is enabled or disabled")
+        CreateCommand::new("scanning")
+            .description("Commands to manage the automatic role scanner")
             .default_member_permissions(Permissions::ADMINISTRATOR)
+            .add_option(
+                CreateCommandOption::new(CommandOptionType::SubCommand, "enable", "Enable the automatic role scanner"),
+            )
+            .add_option(
+                CreateCommandOption::new(CommandOptionType::SubCommand, "disable", "Disable the automatic role scanner"),
+            )
+            .add_option(
+                CreateCommandOption::new(CommandOptionType::SubCommand, "status", "Check if the automatic role scanner is enabled or disabled"),
+            )
+            .add_context(InteractionContext::Guild)
     }
 }

@@ -4,7 +4,7 @@ services:
     image: registry.nemahs.org/primary-role
 
     environment:
-      RUST_LOG: "info,serenity=warn,tracing=warn"
+      RUST_LOG: "warn,discord_bot=info"
 
     secrets:
       - DISCORD_TOKEN
