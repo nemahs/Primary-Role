@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.37.0 (HEAD)
+  labels:
+    io.kompose.service: role-bot
+  name: role-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: role-bot
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.37.0 (HEAD)
+      labels:
+        io.kompose.service: role-bot
+    spec:
+      containers:
+        - env:
+            - name: RUST_LOG
+              value: warn,discord_bot=info
+          image: registry.nemahs.org/primary-role:latest
+          imagePullPolicy: Always
+          name: role-bot
+          volumeMounts:
+            - mountPath: /run/secrets/DISCORD_TOKEN
+              name: discord-token
+              subPath: discord-token
+              readOnly: true
+            - mountPath: /app/data
+              name: bot-data
+          resources:
+            limits:
+              cpu: 1
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+
+      restartPolicy: Always
+      volumes:
+        - name: discord-token
+          secret:
+            items:
+              - key: discord-token
+                path: discord-token
+            secretName: discord-token
+        - name: bot-data
+          persistentVolumeClaim:
+            claimName: bot-data
