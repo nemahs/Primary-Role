@@ -7,18 +7,21 @@ use crate::{
 
 pub struct PrimaryRoleCommands;
 
-impl PrimaryRoleCommands{
+impl PrimaryRoleCommands {
+    async fn set(ctx: &Context, guild_id: Option<GuildId>, command: &CommandDataOptionValue, data: &mut AppData) -> String {
+        let options = if let CommandDataOptionValue::SubCommand(options) = command {
+            options
+        } else {
+            return "Invalid command data".to_string();
+        };
 
-    async fn set(ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
-        let options = &command.data;
-
-        let Some(new_id) = get_option("role_id", &options.options) else {
+        let Some(new_id) = get_option("role_id", &options) else {
             return "No role ID given".to_string();
         };
         let Some(new_id) = new_id.value.as_role_id() else {
             return "Given role ID is invalid".to_string();
         };
-        let Some(guild_id) = options.guild_id else {
+        let Some(guild_id) = guild_id else {
             return "No server ID found".to_string();
         };
 
@@ -55,15 +58,13 @@ impl PrimaryRoleCommands{
 
 #[async_trait]
 impl DiscordCommand for PrimaryRoleCommands {
-    
     async fn run(&self, ctx: &Context, command: &CommandInteraction, data: &mut AppData) -> String {
-
         let Some(subcommand) = command.data.options.get(0) else {
             return "No subcommand given".to_string();
         };
 
         match subcommand.name.as_str() {
-            "set" => PrimaryRoleCommands::set(ctx, command, data).await,
+            "set" => PrimaryRoleCommands::set(ctx, command.guild_id, &subcommand.value, data).await,
             "get" => PrimaryRoleCommands::get(command, data).await,
             _ => "Unknown subcommand".to_string(),
         }
@@ -75,10 +76,12 @@ impl DiscordCommand for PrimaryRoleCommands {
             .default_member_permissions(Permissions::ADMINISTRATOR)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::SubCommand, "set", "Set the primary role for this server")
-                    .add_sub_option(CreateCommandOption::new(CommandOptionType::Role, "role_id", "Role to become the new primary role").required(true))
+                    .add_sub_option(CreateCommandOption::new(CommandOptionType::Role, "role_id", "Role to become the new primary role").required(true)),
             )
-            .add_option(
-                CreateCommandOption::new(CommandOptionType::SubCommand, "get", "Get the current primary role for this server")
-            )
+            .add_option(CreateCommandOption::new(
+                CommandOptionType::SubCommand,
+                "get",
+                "Get the current primary role for this server",
+            ))
     }
 }
